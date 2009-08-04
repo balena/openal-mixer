@@ -145,17 +145,19 @@ private:
 struct Source
 {
 public:
-    explicit Source(DWORD dwSource)
-        : _source(dwSource)
+    explicit Source(DWORD dwDestination, DWORD dwSource)
+        : _destination(dwDestination), _source(dwSource)
     {}
     DWORD operator()() const {
         return MIXER_GETLINEINFOF_SOURCE;
     }
     void operator()(MIXERLINE &line) const {
+        line.dwDestination = _destination;
         line.dwSource = _source;
     }
 
 private:
+    DWORD _destination;
     DWORD _source;
 };
 
@@ -286,7 +288,7 @@ UINT getControls(HMIXEROBJ hMixer, T &whatLine, U &whatControl, ALXctrl **pctrls
             break;
 
         for (s = 0; s < num; s++) {
-            res = getLineInfo(hMixer, Source(s), line);
+            res = getLineInfo(hMixer, Source(line.dwDestination, s), line);
             if (res != MMSYSERR_NOERROR)
                 break;
 
@@ -536,19 +538,19 @@ struct ALXdevice_struct
     }
 
     const char *getOutputVolumeName(int i) {
-        if (i < numOutputs)
+        if (i >= 0 && i < numOutputs)
             return dst[i].name;
         return NULL;
     }
 
     ALXfloat getOutputVolume(int i) {
-        if (i < numOutputs)
+        if (i >= 0 && i < numOutputs)
             return alx::Control(hmx, dst[i].controlID).getVolume();
         return -1.0;
     }
 
     void setOutputVolume(int i, ALXfloat level) {
-        if (i < numOutputs)
+        if (i >= 0 && i < numOutputs)
             (void) alx::Control(hmx, dst[i].controlID).setVolume(level);
     }
 
@@ -557,7 +559,7 @@ struct ALXdevice_struct
 
         if (hmx) {
             i = getCurrentInputSource();
-            if (i < numInputs)
+            if (i >= 0 && i < numInputs)
                 return alx::Control(hmx, src[i].controlID).getVolume();
         }
 
@@ -569,7 +571,7 @@ struct ALXdevice_struct
 
         if (hmx) {
             i = getCurrentInputSource();
-            if (i < numInputs)
+            if (i >= 0 && i < numInputs)
                 (void) alx::Control(hmx, src[i].controlID).setVolume(level);
         }
     }
@@ -581,7 +583,7 @@ struct ALXdevice_struct
     }
 
     void disableOutputVolume(int i, ALXboolean flag) {
-        if (i < numOutputs)
+        if (i >= 0 && i < numOutputs)
             (void) alx::Control(hmx, dstBoolean[i].controlID).disable(flag);
     }
 
@@ -606,7 +608,7 @@ struct ALXdevice_struct
     }
 
     const char *getInputSourceName(int i) {
-        if (i < numInputs)
+        if (i >= 0 && i < numInputs)
             return src[i].name;
         return NULL;
     }
