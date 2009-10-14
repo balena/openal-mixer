@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <al.h>
 #include <alx.h>
+#include <string.h>
 
 int stack_ptr = 0;
 char stack[1024];
@@ -60,19 +61,18 @@ void pop(T &value)
     stack_ptr -= sizeof(T);
 }
 
-static void testInputDevice()
+static void testInputDevice(const ALXchar *deviceName)
 {
     ALXfloat value;
     const ALXchar *inputName;
 
-    const ALXchar *defaultDevice = alcGetString(NULL, ALC_CAPTURE_DEFAULT_DEVICE_SPECIFIER);
-    ALCdevice *device = alcCaptureOpenDevice(defaultDevice, 8000, AL_FORMAT_MONO16, 1000);
+    ALCdevice *device = alcCaptureOpenDevice(deviceName, 8000, AL_FORMAT_MONO16, 1000);
     ALXdevice *mixer = alxMapCaptureDevice(device);
 
     ALXint i, numInputs = alxGetInteger(mixer, ALX_INPUT_SOURCE_SPECIFIER);
     ALXint selectedInput = alxGetInteger(mixer, ALX_INPUT_SOURCE);
 
-    printf("---- Input device: %s\n", defaultDevice);
+    printf("---- Input device: %s\n", deviceName);
     printf("Available sources:\n");
     for (i = 0; i < numInputs; ++i) {
         inputName = alxGetIndexedString(mixer, ALX_INPUT_SOURCE_SPECIFIER, i);
@@ -93,20 +93,36 @@ static void testInputDevice()
     alxCloseDevice(mixer);
 }
 
-static void testOutputDevice()
+static void testInputDevices()
+{
+    printf("==== Testing input devices ====\n");
+
+    const ALXchar *defaultDevice = alcGetString(NULL, ALC_CAPTURE_DEFAULT_DEVICE_SPECIFIER);
+    printf("---- Default input device: %s\n", defaultDevice);
+
+    const ALCchar* pDeviceNames = alcGetString(NULL, ALC_CAPTURE_DEVICE_SPECIFIER);
+
+    if (pDeviceNames && strlen(pDeviceNames) > 0) {
+        while (pDeviceNames && *pDeviceNames) {
+            testInputDevice(pDeviceNames);
+            pDeviceNames += strlen(pDeviceNames) + 1;
+        }
+    }
+}
+
+static void testOutputDevice(const ALXchar *deviceName)
 {
     ALXfloat value;
     ALXboolean disabled;
     const ALXchar *outputName;
 
-    const ALXchar *defaultDevice = alcGetString(NULL, ALC_DEFAULT_ALL_DEVICES_SPECIFIER);
-    ALCdevice *device = alcOpenDevice(defaultDevice);
+    ALCdevice *device = alcOpenDevice(deviceName);
     ALXdevice *mixer = alxMapDevice(device);
 
     ALXint i, numOutputs = alxGetInteger(mixer, ALX_OUTPUT_VOLUME_SPECIFIER);
     ALXboolean pcmExists = alxGetBoolean(mixer, ALX_PCM_OUTPUT);
 
-    printf("---- Output device: %s\n", defaultDevice);
+    printf("---- Output device: %s\n", deviceName);
     printf("Available destinations:\n");
     for (i = 0; i < numOutputs; ++i) {
         outputName = alxGetIndexedString(mixer, ALX_OUTPUT_VOLUME_SPECIFIER, i);
@@ -181,10 +197,27 @@ static void testOutputDevice()
     alxCloseDevice(mixer);
 }
 
+static void testOutputDevices()
+{
+    printf("==== Testing output devices ====\n");
+
+    const ALXchar *defaultDevice = alcGetString(NULL, ALC_DEFAULT_ALL_DEVICES_SPECIFIER);
+    printf("---- Default output device: %s\n", defaultDevice);
+
+    const ALCchar* pDeviceNames = alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER);
+
+    if (pDeviceNames && strlen(pDeviceNames) > 0) {
+        while (pDeviceNames && *pDeviceNames) {
+            testOutputDevice(pDeviceNames);
+            pDeviceNames += strlen(pDeviceNames) + 1;
+        }
+    }
+}
+
 int main()
 {
-    testInputDevice();
-    testOutputDevice();
+    testInputDevices();
+    testOutputDevices();
     getchar();
     return 0;
 }
