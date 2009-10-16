@@ -127,7 +127,6 @@ enum ControlType_Type {
 struct ComponentType
 {
 public:
-
     explicit ComponentType(ComponentType_Type componentType)
         : _componentType(componentType)
     {}
@@ -150,6 +149,23 @@ public:
     {}
     DWORD operator()() const {
         return MIXER_GETLINEINFOF_SOURCE;
+    }
+    void operator()(MIXERLINE &line) const {
+        line.dwSource = _source;
+    }
+
+private:
+    DWORD _source;
+};
+
+struct Destination
+{
+public:
+    explicit Destination(DWORD dwSource)
+        : _source(dwSource)
+    {}
+    DWORD operator()() const {
+        return MIXER_GETLINEINFOF_DESTINATION;
     }
     void operator()(MIXERLINE &line) const {
         line.dwSource = _source;
@@ -477,12 +493,14 @@ struct ALXdevice_struct
     int         numInputs;
     int         numOutputs;
     ALXctrl    *src;
+    ALXctrl    *srcBoolean;
     ALXctrl    *dst;
     ALXctrl    *dstBoolean;
 
     HWAVEIN     hWaveIn;
     HWAVEOUT    hWaveOut;
 
+    bool        inputMux;
     DWORD       muxID;
     DWORD       speakerID;
     DWORD       speakerID_boolean;
@@ -492,10 +510,11 @@ struct ALXdevice_struct
     ALXchar    *szDeviceName;
 
     ALXdevice_struct()
-        : hmx(0), numInputs(0), numOutputs(0), src(0),
-          dst(0), dstBoolean(0), hWaveIn(0), hWaveOut(0),
-          muxID(-1), speakerID(-1), speakerID_boolean(-1),
-          waveID(-1), waveID_boolean(-1), szDeviceName(0)
+        : hmx(0), numInputs(0), numOutputs(0),
+          src(0), srcBoolean(0), dst(0), dstBoolean(0),
+          hWaveIn(0), hWaveOut(0), muxID(-1), speakerID(-1),
+          speakerID_boolean(-1), waveID(-1), waveID_boolean(-1),
+          szDeviceName(0), inputMux(false)
     {}
 
     ~ALXdevice_struct() {
@@ -506,6 +525,7 @@ struct ALXdevice_struct
         if (hmx)
             mixerClose((HMIXER) hmx);
         delete [] src;
+        delete [] srcBoolean;
         delete [] dst;
         delete [] dstBoolean;
         free(szDeviceName);
@@ -556,9 +576,14 @@ struct ALXdevice_struct
         int i;
 
         if (hmx) {
-            i = getCurrentInputSource();
-            if (i < numInputs)
-                return alx::Control(hmx, src[i].controlID).getVolume();
+            if (inputMux) {
+                i = getCurrentInputSource();
+                if (i < numInputs)
+                    return alx::Control(hmx, src[i].controlID).getVolume();
+            }
+            else {
+                return alx::Control(hmx, muxID).getVolume();
+            }
         }
 
         return -1.0;
@@ -568,15 +593,33 @@ struct ALXdevice_struct
         int i;
 
         if (hmx) {
-            i = getCurrentInputSource();
-            if (i < numInputs)
-                (void) alx::Control(hmx, src[i].controlID).setVolume(level);
+            if (inputMux) {
+                i = getCurrentInputSource();
+                if (i < numInputs)
+                    (void) alx::Control(hmx, src[i].controlID).setVolume(level);
+            }
+            else {
+                (void) alx::Control(hmx, muxID).setVolume(level);
+            }
         }
     }
 
     ALXboolean isDisabledOutputVolume(int i) {
         if (i < numOutputs)
             return alx::Control(hmx, dstBoolean[i].controlID).disabled();
+        return ALX_TRUE;
+    }
+
+    ALXboolean isDisabledInputVolume(int i) {
+        if (i < numInputs) {
+            if (inputMux) {
+                return i == getCurrentInputSource() ? ALX_FALSE : ALX_TRUE;
+            }
+            else {
+                return alx::Control(hmx, srcBoolean[i].controlID).disabled()
+                    ? ALX_FALSE : ALX_TRUE;
+            }
+        }
         return ALX_TRUE;
     }
 
@@ -945,18 +988,41 @@ ALXAPI ALXdevice * ALXAPIENTRY alxOpenCaptureDevice(const ALXchar *devicename)
                     pMixer->hWaveIn = hWaveIn;
                     pMixer->szDeviceName = strdup(mixerDevice);
 
-                    pMixer->muxID = alx::findControl(pMixer->hmx,
-                        alx::ComponentType(alx::DstWaveIn),
-                        alx::ControlType(alx::Mux));
+                    struct {
+                        alx::ComponentType_Type component;
+                        alx::ControlType_Type   control;
+                    } tries[] = {
+                        { alx::DstWaveIn, alx::Mux   },
+                        { alx::DstWaveIn, alx::Mixer },
+                    };
+
+                    for (i = 0; i < sizeof(tries) / sizeof(tries[0]); ++i) {
+                        pMixer->muxID = alx::findControl(pMixer->hmx,
+                            alx::ComponentType(tries[i].component),
+                            alx::ControlType(tries[i].control));
+                        if (pMixer->muxID != -1) {
+                            pMixer->inputMux = true;
+                            break;
+                        }
+                    }
+
                     if (pMixer->muxID == -1) {
+                        pMixer->inputMux = false;
                         pMixer->muxID = alx::findControl(pMixer->hmx,
                             alx::ComponentType(alx::DstWaveIn),
-                            alx::ControlType(alx::Mixer));
+                            alx::ControlType(alx::Volume));
                     }
+
                     pMixer->numInputs = alx::getControls(pMixer->hmx,
                         alx::ComponentType(alx::DstWaveIn),
                         alx::ControlType(alx::Volume),
                         &pMixer->src);
+                    if (pMixer->numInputs > 0) {
+                        (void) alx::getControls(pMixer->hmx,
+                            alx::ComponentType(alx::DstWaveIn),
+                            alx::ControlType(alx::Mute),
+                            &pMixer->srcBoolean);
+                    }
                 }
                 else {
                     mixerClose(hmx);
@@ -1258,10 +1324,6 @@ ALXAPI ALXint ALXAPIENTRY alxGetInteger(ALXdevice *pMixer, ALXenum param)
         case ALX_INPUT_SOURCE_SPECIFIER:
             value = pMixer->getNumInputSources();
             break;
-
-        case ALX_INPUT_SOURCE:
-            value = pMixer->getCurrentInputSource();
-            break;
  
         default:
             alx::setError(ALX_INVALID_ENUM);
@@ -1357,6 +1419,10 @@ ALXAPI ALXboolean ALXAPIENTRY alxGetIndexedBoolean(ALXdevice *pMixer, ALXenum pa
         {
         case ALX_OUTPUT_VOLUME:
             value = pMixer->isDisabledOutputVolume(index);
+            break;
+
+        case ALX_INPUT_SOURCE:
+            value = pMixer->isDisabledInputVolume(index);
             break;
 
         default:

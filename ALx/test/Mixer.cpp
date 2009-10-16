@@ -69,15 +69,16 @@ static void testInputDevice(const ALXchar *deviceName)
     ALCdevice *device = alcCaptureOpenDevice(deviceName, 8000, AL_FORMAT_MONO16, 1000);
     ALXdevice *mixer = alxMapCaptureDevice(device);
 
+    ALXboolean disabled;
     ALXint i, numInputs = alxGetInteger(mixer, ALX_INPUT_SOURCE_SPECIFIER);
-    ALXint selectedInput = alxGetInteger(mixer, ALX_INPUT_SOURCE);
 
     printf("---- Input device: %s\n", deviceName);
     printf("Available sources:\n");
     for (i = 0; i < numInputs; ++i) {
         inputName = alxGetIndexedString(mixer, ALX_INPUT_SOURCE_SPECIFIER, i);
+        disabled = alxGetIndexedBoolean(mixer, ALX_INPUT_SOURCE, i);
         printf("+ %s%s\n", inputName,
-            i == selectedInput ? " <---" : "");
+            i == disabled ? " (disabled)" : "");
     }
 
     value = alxGetFloat(mixer, ALX_INPUT_VOLUME); push(value); 
