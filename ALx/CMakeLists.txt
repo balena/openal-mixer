@@ -8,10 +8,33 @@ SET(STATIC_LIBRARY OFF CACHE BOOL
   "Indicates whether the OpenAL mixer library should be generated static or shared")
 
 IF(WIN32)
+
+  # Setup msvc
+  IF(MSVC)
+
+    SET(CMAKE_C_FLAGS "/MT /W3")
+    SET(CMAKE_C_FLAGS_DEBUG "/MTd /Zi /Gm /GX /Od /GZ")
+    SET(CMAKE_C_FLAGS_RELEASE "/MT /GX /O2")
+    SET(CMAKE_C_FLAGS_MINSIZEREL "/MT /GX /O1")
+    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "/MT /Zi /GX /O2")
+
+    SET(CMAKE_CXX_FLAGS "/MT /W3")
+    SET(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Gm /GX /Od /GZ")
+    SET(CMAKE_CXX_FLAGS_RELEASE "/MT /GX /O2")
+    SET(CMAKE_CXX_FLAGS_MINSIZEREL "/MT /GX /O1")
+    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT /Zi /GX /O2")
+
+    SET(CMAKE_EXE_LINKER_FLAGS "/machine:I386")
+    SET(CMAKE_SHARED_LINKER_FLAGS "/dll /machine:I386")
+    SET(CMAKE_MODULE_LINKER_FLAGS "/dll /machine:I386")
+
+  ENDIF(MSVC)
+
   SET(ALX_SOURCES
     win32/ALx.cpp
     include/alx.h
   )
+
 ENDIF(WIN32)
 
 INCLUDE_DIRECTORIES(./include ${OPENAL_INCLUDE_DIR})
