@@ -34,6 +34,12 @@
 
 #include <stdio.h>
 #include <al.h>
+#include <alc.h>
+
+#if HAVE_ALEXT_H
+#include <alext.h>
+#endif
+
 #include <alx.h>
 #include <string.h>
 

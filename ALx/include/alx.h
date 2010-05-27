@@ -224,25 +224,25 @@ ALX_API void *          ALX_APIENTRY alxGetProcAddress( ALXdevice *device, const
 /*
  * Pointer-to-function types, useful for dynamically getting ALX entry points.
  */
-typedef ALXdevice *     (ALX_APIENTRY LPALXOPENDEVICE)( ALCdevice *device );
-typedef ALXdevice *     (ALX_APIENTRY LPALXOPENCAPTUREDEVICE)( ALCdevice *device );
-typedef ALXdevice *     (ALX_APIENTRY LPALXMAPDEVICE)( ALCdevice *device );
-typedef ALXdevice *     (ALX_APIENTRY LPALXMAPCAPTUREDEVICE)( ALCdevice *device );
-typedef void            (ALX_APIENTRY LPALXCLOSEDEVICE)( ALXdevice *mixer );
-typedef ALCenum         (ALX_APIENTRY LPALXGETERROR)( ALXdevice *mixer );
-typedef ALXfloat        (ALX_APIENTRY LPALXGETFLOAT)( ALXdevice *mixer, ALXenum param );
-typedef void            (ALX_APIENTRY LPALXSETFLOAT)( ALXdevice *mixer, ALXenum param, ALXfloat value );
-typedef ALXboolean      (ALX_APIENTRY LPALXGETBOOLEAN)( ALXdevice *mixer, ALXenum param );
-typedef void            (ALX_APIENTRY LPALXSETBOOLEAN)( ALXdevice *mixer, ALXenum param, ALXboolean value );
-typedef const ALXchar * (ALX_APIENTRY LPALXGETSTRING)( ALXdevice *mixer, ALXenum param );
-typedef ALXint          (ALX_APIENTRY LPALXGETINTEGER)( ALXdevice *mixer, ALXenum param );
-typedef void            (ALX_APIENTRY LPALXSETINTEGER)( ALXdevice *mixer, ALXenum param, ALXint value );
-typedef void            (ALX_APIENTRY LPALXGETINDEXEDSTRING)( ALXdevice *mixer, ALXenum param, ALXint index );
-typedef ALXfloat        (ALX_APIENTRY LPALXGETINDEXEDFLOAT)( ALXdevice *mixer, ALXenum param, ALXint index );
-typedef ALXboolean      (ALX_APIENTRY LPALXGETINDEXEDBOOLEAN)( ALXdevice *mixer, ALXenum param, ALXint index );
-typedef void            (ALX_APIENTRY LPALXSETINDEXEDFLOAT)( ALXdevice *mixer, ALXenum param, ALXint index, ALXfloat value );
-typedef void            (ALX_APIENTRY LPALXSETINDEXEDBOOLEAN)( ALXdevice *mixer, ALXenum param, ALXint index, ALXboolean value );
-typedef void *          (ALX_APIENTRY LPALXGETPROCADDRESS)( ALXdevice *device, const ALXchar *funcName );
+typedef ALXdevice *     (ALX_APIENTRY *LPALXOPENDEVICE)( ALCdevice *device );
+typedef ALXdevice *     (ALX_APIENTRY *LPALXOPENCAPTUREDEVICE)( ALCdevice *device );
+typedef ALXdevice *     (ALX_APIENTRY *LPALXMAPDEVICE)( ALCdevice *device );
+typedef ALXdevice *     (ALX_APIENTRY *LPALXMAPCAPTUREDEVICE)( ALCdevice *device );
+typedef void            (ALX_APIENTRY *LPALXCLOSEDEVICE)( ALXdevice *mixer );
+typedef ALCenum         (ALX_APIENTRY *LPALXGETERROR)( ALXdevice *mixer );
+typedef ALXfloat        (ALX_APIENTRY *LPALXGETFLOAT)( ALXdevice *mixer, ALXenum param );
+typedef void            (ALX_APIENTRY *LPALXSETFLOAT)( ALXdevice *mixer, ALXenum param, ALXfloat value );
+typedef ALXboolean      (ALX_APIENTRY *LPALXGETBOOLEAN)( ALXdevice *mixer, ALXenum param );
+typedef void            (ALX_APIENTRY *LPALXSETBOOLEAN)( ALXdevice *mixer, ALXenum param, ALXboolean value );
+typedef const ALXchar * (ALX_APIENTRY *LPALXGETSTRING)( ALXdevice *mixer, ALXenum param );
+typedef ALXint          (ALX_APIENTRY *LPALXGETINTEGER)( ALXdevice *mixer, ALXenum param );
+typedef void            (ALX_APIENTRY *LPALXSETINTEGER)( ALXdevice *mixer, ALXenum param, ALXint value );
+typedef void            (ALX_APIENTRY *LPALXGETINDEXEDSTRING)( ALXdevice *mixer, ALXenum param, ALXint index );
+typedef ALXfloat        (ALX_APIENTRY *LPALXGETINDEXEDFLOAT)( ALXdevice *mixer, ALXenum param, ALXint index );
+typedef ALXboolean      (ALX_APIENTRY *LPALXGETINDEXEDBOOLEAN)( ALXdevice *mixer, ALXenum param, ALXint index );
+typedef void            (ALX_APIENTRY *LPALXSETINDEXEDFLOAT)( ALXdevice *mixer, ALXenum param, ALXint index, ALXfloat value );
+typedef void            (ALX_APIENTRY *LPALXSETINDEXEDBOOLEAN)( ALXdevice *mixer, ALXenum param, ALXint index, ALXboolean value );
+typedef void *          (ALX_APIENTRY *LPALXGETPROCADDRESS)( ALXdevice *device, const ALXchar *funcName );
 
 
 #if defined(TARGET_OS_MAC) && TARGET_OS_MAC
